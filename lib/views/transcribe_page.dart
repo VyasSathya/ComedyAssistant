@@ -134,7 +134,10 @@ class _TranscribePageState extends State<TranscribePage> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppTheme.primaryColor.withOpacity(0.05), Colors.white],
+            colors: [
+              AppTheme.primaryColor.withAlpha(13),  // 0.05 * 255 ≈ 13
+              Colors.white
+            ],
           ),
         ),
         child: isLoading 
@@ -262,7 +265,7 @@ class _TranscribePageState extends State<TranscribePage> {
                         // Premium toggle
                         Container(
                           decoration: BoxDecoration(
-                            color: Colors.amber.withOpacity(0.1),
+                            color: Colors.black.withAlpha(26),  // 0.1 * 255 ≈ 26
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: Colors.amber.shade200,

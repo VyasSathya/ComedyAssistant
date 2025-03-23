@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:comedy_assistant/controllers/app_state.dart';
 import 'package:record/record.dart';
 import 'package:comedy_assistant/views/transcribe_page.dart';
+import 'package:path_provider/path_provider.dart';
 
 class RecordPage extends StatefulWidget {
   const RecordPage({super.key});
@@ -20,18 +21,17 @@ class _RecordPageState extends State<RecordPage> with SingleTickerProviderStateM
   bool isPreparing = false;
   int recordingDuration = 0;
   Timer? timer;
-  Timer? pulseTimer;
-  double pulseScale = 1.0;
-  final _audioRecorder = Record();
   String? _recordingPath;
   
-  // Animation controller for the recording indicator pulse
+  late AudioRecorder _audioRecorder;
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
   @override
   void initState() {
     super.initState();
+    _audioRecorder = AudioRecorder();
+    
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
@@ -43,10 +43,9 @@ class _RecordPageState extends State<RecordPage> with SingleTickerProviderStateM
   }
 
   void toggleRecording() async {
-    if (isPreparing) return; // Prevent multiple taps during preparation
+    if (isPreparing) return;
     
     if (!isRecording) {
-      // Starting recording
       setState(() {
         isPreparing = true;
       });
@@ -57,7 +56,6 @@ class _RecordPageState extends State<RecordPage> with SingleTickerProviderStateM
         isPreparing = false;
       });
     } else {
-      // Stopping recording
       setState(() {
         isPreparing = true;
         isRecording = false;
@@ -72,42 +70,41 @@ class _RecordPageState extends State<RecordPage> with SingleTickerProviderStateM
   }
 
   Future<void> startRecording() async {
-    // Check and request permissions
     if (await _audioRecorder.hasPermission()) {
       try {
-        // Web or non-web handling for path
         String path;
         if (kIsWeb) {
-          // For web, we just use a simple path string 
           final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
           path = 'recording_$timestamp.webm';
         } else {
-          // For mobile
+          final appDir = await getApplicationDocumentsDirectory();
           final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-          path = 'recording_$timestamp.m4a';
+          path = '${appDir.path}/recording_$timestamp.m4a';
         }
         
         _recordingPath = path;
         
-        // Start recording with web-compatible settings
+        if (_recordingPath == null) {
+          throw Exception('Recording path is null');
+        }
+
         await _audioRecorder.start(
-          path: _recordingPath,
-          encoder: kIsWeb ? AudioEncoder.opus : AudioEncoder.aacLc,
-          bitRate: 128000,
-          samplingRate: 44100,
+          path: _recordingPath!,
+          const RecordConfig(
+            encoder: AudioEncoder.aacLc,
+            bitRate: 128000,
+            sampleRate: 44100,
+          ),
         );
         
-        // Reset timer
         recordingDuration = 0;
         
-        // Start timer for UI
         timer = Timer.periodic(const Duration(seconds: 1), (timer) {
           setState(() {
             recordingDuration++;
           });
         });
         
-        // Update UI state
         setState(() {
           isRecording = true;
         });
@@ -125,7 +122,6 @@ class _RecordPageState extends State<RecordPage> with SingleTickerProviderStateM
         }
       }
     } else {
-      // Handle permission denied
       setState(() {
         isRecording = false;
       });
@@ -146,7 +142,6 @@ class _RecordPageState extends State<RecordPage> with SingleTickerProviderStateM
       if (path != null && mounted) {
         debugPrint('Recording stopped at: $path');
         
-        // Navigate to transcribe page
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -183,7 +178,6 @@ class _RecordPageState extends State<RecordPage> with SingleTickerProviderStateM
     } catch (e) {
       debugPrint('Error stopping recording: $e');
       if (mounted) {
-        // Try to continue with a demo recording even if there's an error
         if (kIsWeb) {
           Navigator.push(
             context,
@@ -211,7 +205,6 @@ class _RecordPageState extends State<RecordPage> with SingleTickerProviderStateM
   @override
   void dispose() {
     timer?.cancel();
-    pulseTimer?.cancel();
     _pulseController.dispose();
     _audioRecorder.dispose();
     super.dispose();
@@ -232,13 +225,15 @@ class _RecordPageState extends State<RecordPage> with SingleTickerProviderStateM
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [AppTheme.primaryColor.withOpacity(0.1), Colors.white],
+            colors: [
+              AppTheme.primaryColor.withAlpha((0.1 * 255).toInt()), 
+              Colors.white
+            ],
           ),
         ),
         child: Column(
           children: [
             const SizedBox(height: 40),
-            // Recording title
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
@@ -246,7 +241,7 @@ class _RecordPageState extends State<RecordPage> with SingleTickerProviderStateM
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withAlpha((0.1 * 255).toInt()),
                     blurRadius: 10,
                     offset: const Offset(0, 2),
                   ),
@@ -262,13 +257,11 @@ class _RecordPageState extends State<RecordPage> with SingleTickerProviderStateM
               ),
             ),
             
-            // Main recording button area
             Expanded(
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Recording indicator (visible only when recording)
                     if (isRecording)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 24),
@@ -287,7 +280,6 @@ class _RecordPageState extends State<RecordPage> with SingleTickerProviderStateM
                         ),
                       ),
                     
-                    // Record button with animation
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
                       width: isRecording ? 180 : 160,
@@ -298,8 +290,8 @@ class _RecordPageState extends State<RecordPage> with SingleTickerProviderStateM
                         boxShadow: [
                           BoxShadow(
                             color: isRecording 
-                                ? Colors.red.withOpacity(0.3) 
-                                : AppTheme.primaryColor.withOpacity(0.3),
+                                ? Colors.red.withAlpha((0.3 * 255).toInt())
+                                : AppTheme.primaryColor.withAlpha((0.3 * 255).toInt()),
                             blurRadius: 20,
                             spreadRadius: 5,
                           ),
@@ -350,7 +342,6 @@ class _RecordPageState extends State<RecordPage> with SingleTickerProviderStateM
                     
                     const SizedBox(height: 30),
                     
-                    // Helper text
                     AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),
                       child: isPreparing
@@ -376,10 +367,8 @@ class _RecordPageState extends State<RecordPage> with SingleTickerProviderStateM
                     
                     const SizedBox(height: 40),
                     
-                    // Previous recordings button
                     ElevatedButton.icon(
                       onPressed: () {
-                        // Navigate to library page
                         Provider.of<AppState>(context, listen: false).updateIndex(1);
                       },
                       style: ElevatedButton.styleFrom(
@@ -400,14 +389,13 @@ class _RecordPageState extends State<RecordPage> with SingleTickerProviderStateM
                     
                     const SizedBox(height: 40),
                     
-                    // Timer display
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       decoration: BoxDecoration(
-                        color: isRecording ? Colors.red.withOpacity(0.1) : Colors.grey.shade100,
+                        color: isRecording ? Colors.red.withAlpha((0.1 * 255).toInt()) : Colors.grey.shade100,
                         borderRadius: BorderRadius.circular(30),
                         border: isRecording 
-                            ? Border.all(color: Colors.red.withOpacity(0.3), width: 2)
+                            ? Border.all(color: Colors.red.withAlpha((0.3 * 255).toInt()), width: 2)
                             : null,
                       ),
                       child: Text(

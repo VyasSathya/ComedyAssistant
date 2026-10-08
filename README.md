@@ -1,105 +1,43 @@
 # Comedy Assistant
 
-A Flutter mobile application designed to help comedians capture, organize, analyze, and prepare their comedy material.
+A Flutter prototype for capturing, organizing, and preparing comedy material. The source includes recording/transcription screens, joke/bit/idea models, a local library, and setlist UI.
 
-## Overview
+## Explore the implementation
 
-Comedy Assistant provides an intuitive platform for comedians at any level to record, transcribe, categorize, and refine their comedy material. The app uses AI-powered analysis to provide insights on comedy structure, themes, and potential improvements.
+| Area | Source | Role |
+| --- | --- | --- |
+| App entry and state | [main.dart](lib/main.dart), [AppState](lib/controllers/app_state.dart) | Flutter startup and Provider state |
+| Data models | [data_models.dart](lib/models/data_models.dart) | Jokes, bits, ideas, and setlists |
+| Local storage | [storage_service.dart](lib/services/storage_service.dart) | Serialization through SharedPreferences |
+| Analysis prototype | [analysis_service.dart](lib/services/analysis_service.dart) | Demonstration scoring, labels, and text heuristics |
+| Material and setlist screens | [views/](lib/views/) | Recording, categorization, library, detail, settings, and setlists |
 
-## Features
+The current analysis service is a demonstration implementation, including heuristic and randomized outputs. These scores are not validated measures of audience response or a trained comedy-analysis model.
 
-### Recording & Transcription
-- **Audio Recording**: Capture your comedy ideas with high-quality audio recording
-- **Transcription**: Convert recordings to text for easy editing and organization
-- **Text Editing**: Refine your material with powerful editing tools
+## Development setup
 
-### Content Organization
-- **Content Categories**: Organize your material as Jokes, Bits, or Ideas
-- **Smart Tagging**: Automatically identify themes and comedy mechanisms
-- **Search & Filter**: Easily find material by content, theme, or rating
+Install Flutter with a Dart version compatible with the constraint in [pubspec.yaml](pubspec.yaml), currently `>=3.0.0 <4.0.0`.
 
-### Analysis & Insights
-- **Performance Metrics**: Get scores and analysis on your comedy material
-- **Comedy Structure Analysis**: Identify setup/punchline structure and flow
-- **Theme Detection**: Discover recurring themes in your comedy
-- **Improvement Suggestions**: Receive targeted tips to improve your material
+```sh
+flutter pub get
+```
 
-### Performance Preparation
-- **Setlist Creation**: Build and organize performance setlists
-- **Timing Estimation**: Track estimated duration of your sets
-- **Performance Mode**: Clean, distraction-free interface for live performance
+The app loads a root `.env` file at startup, and the manifest includes that file as a Flutter asset. Create an untracked local `.env` file before evaluating the app. The combined record/transcribe screen reads `GOOGLE_API_KEY`; no working provider configuration or key is supplied here. Bundled environment values are readable by clients, so privileged server credentials should not be placed in that asset.
 
-### Additional Features
-- **Version History**: Track changes to your material over time
-- **Favorites**: Mark your best material for quick access
-- **Simple Sharing**: Share your material with other comedians or social media
+With a compatible device or emulator available:
 
-## Technical Architecture
+```sh
+flutter run
+```
 
-The app is built with:
-- **Flutter**: For cross-platform UI development
-- **Provider**: For state management
-- **SharedPreferences**: For local data storage
-- **Record & Just Audio**: For audio recording and playback
-- **Custom Analysis Engine**: For comedy content analysis
+Current dependency resolution, microphone permissions, device behavior, and provider integration have not been validated in this documentation review.
 
-## Modules
+## Transcription status
 
-### 1. Data Models
-- `Joke`: For setup/punchline style content
-- `Bit`: For longer-form comedy sequences
-- `Idea`: For undeveloped comedy concepts
-- `Setlist`: For organizing performance material
+There are separate transcription paths in the source. [transcribe_page.dart](lib/views/transcribe_page.dart) uses demo transcription content and synthetic word timings. [record_and_transcribe_page.dart](lib/views/record_and_transcribe_page.dart) includes a Google API integration path, which requires separate configuration and verification. Neither path is claimed here as an end-to-end tested speech service.
 
-### 2. Services
-- `StorageService`: Manages local data persistence
-- `AnalysisService`: Provides comedy content analysis
-- `AudioService`: Handles recording and playback functionality
-
-### 3. UI Components
-- `RecordPage`: For capturing new material
-- `TranscribePage`: For viewing and editing transcriptions
-- `CategorizePage`: For categorizing and tagging content
-- `LibraryPage`: For browsing and searching all content
-- `MaterialDetailPage`: For viewing and editing specific content
-- `SetlistPage`: For creating and managing performance setlists
-- `SettingsPage`: For configuring app preferences
-
-## Setup and Installation
-
-1. Ensure you have Flutter installed on your development machine
-2. Clone this repository
-3. Run `flutter pub get` to install dependencies
-4. Connect a device or emulator
-5. Run `flutter run` to start the application
-
-## Dependencies
-
-- flutter: ^3.0.0
-- provider: ^6.0.0
-- shared_preferences: ^2.0.0
-- record: ^4.0.0
-- just_audio: ^0.9.0
-
-## Future Enhancements
-
-- Cloud synchronization for multi-device access
-- Deep learning-based comedy analysis
-- Collaboration features for writing partners
-- Performance analytics with audience feedback integration
-- Voice analysis for delivery improvement
+Use synthetic material for screenshots and demo recordings; the app's purpose is to manage writing that may be private. No genuine user material is supplied as a documentation example.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgements
-
-Special thanks to:
-- All the comedians who provided feedback during development
-- The Flutter community for their excellent packages
-- Open source contributors worldwide
-
----
-
-For support or feature requests, please file an issue on the GitHub repository.
+The original README stated MIT, but its referenced `LICENSE` file is absent from this checkout. The owner needs to restore or clarify the intended license notice before offering the source under complete reuse terms.
